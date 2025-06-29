@@ -1,15 +1,31 @@
-
 trigger:
-- main
+  - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
+
+variables:
+  resourceGroup: 'rg-eastus-demo'
+  location: 'eastus'
+  storageAccount: 'storageacctdemo1234'  # must be lowercase and globally unique
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+  - task: AzureCLI@2
+    displayName: 'Create RG and Storage Account'
+    inputs:
+      azureSubscription: 'AzureServiceConnection'  # Replace with your actual service connection name
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Creating Resource Group..."
+        az group create --name ${{ variables.resourceGroup }} --location ${{ variables.location }}
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+        echo "Creating Storage Account..."
+        az storage account create \
+          --name ${{ variables.storageAccount }} \
+          --resource-group ${{ variables.resourceGroup }} \
+          --location ${{ variables.location }} \
+          --sku Standard_LRS \
+          --kind StorageV2 \
+          --enable-hierarchical-namespace false
+      workingDirectory: $(System.DefaultWorkingDirectory)
